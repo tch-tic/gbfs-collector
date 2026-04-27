@@ -1,0 +1,36 @@
+# .github/workflows/collect.yml
+name: Collecte Vélib'
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # toutes les 10 minutes
+  workflow_dispatch:           # déclenchement manuel possible
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # nécessaire pour committer
+
+    steps:
+      - name: Checkout du repo
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install requests pandas pyarrow
+
+      - name: Lancer la collecte
+        run: python velib_collect.py
+
+      - name: Committer les données
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/
+          git commit -m "collecte $(date +'%Y-%m-%d %H:%M')" || echo "Rien à committer"
+          git push
